@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Agentic AI Console</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Overlay for mobile sidebar -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar / Info Panel -->
+    <aside class="sidebar">
+        <button class="close-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></button>
+        <div class="logo-area">
+            <div class="logo-icon"><i class="fa-solid fa-brain-circuit"></i></div>
+            <h2>Agentic Console</h2>
+        </div>
+        
+        <div class="system-status">
+            <h3>System Status</h3>
+            <div class="status-item">
+                <span class="status-dot online"></span>
+                <span class="status-label">Gemini 3.5 Flash</span>
+                <span class="status-badge">API OK</span>
+            </div>
+            <div class="status-item">
+                <span class="status-dot online"></span>
+                <span class="status-label">OpenWeather API</span>
+                <span class="status-badge">API OK</span>
+            </div>
+            <div class="status-item">
+                <span class="status-dot online"></span>
+                <span class="status-label">Product Database</span>
+                <span class="status-badge">ONLINE</span>
+            </div>
+        </div>
+
+        <div class="capabilities">
+            <h3>Registered Tools</h3>
+            <div class="desc-card tooltip">
+                <div class="cap-name"><i class="fa-solid fa-calculator"></i> add_numbers</div>
+                <div class="cap-desc">Computes real-time additions and values. Try "What is 142.5 + 85.3?"</div>
+            </div>
+            <div class="desc-card tooltip">
+                <div class="cap-name"><i class="fa-solid fa-store"></i> product_info</div>
+                <div class="cap-desc">Queries specifications and pricing for iPhones, Samsung phones, and MacBooks. Try "Does MacBook space gray exist?"</div>
+            </div>
+            <div class="desc-card tooltip">
+                <div class="cap-name"><i class="fa-solid fa-cloud-sun"></i> get_weather</div>
+                <div class="cap-desc">Fetches live weather reports using OpenWeatherMap. Try "What is the temperature in London?"</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-workspace">
+        <header class="app-header">
+            <div class="header-title-row">
+                <button id="menu-toggle" class="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+                <h1 class="gradient-text">Gemini Agentic Assistant</h1>
+            </div>
+            <p>An intelligent tool-calling agent with live execution tracking.</p>
+        </header>
+
+        <div class="workspace-grid">
+            <!-- Chat Section -->
+            <section class="chat-section">
+                <div class="card-header">
+                    <i class="fa-solid fa-comments"></i> Live Agent Chat
+                </div>
+                <div id="chat-box" class="chat-box">
+                    <div class="message bot">
+                        <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                        <div class="bubble">
+                            <p>Hello! I am your agentic AI powered by Gemini 3.5-Flash. I can answer general questions, make calculations, lookup products, and check the live weather anywhere in the world.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-area">
+                    <div class="input-wrapper">
+                        <input type="text" id="user-input" placeholder="Ask anything to invoke agent capabilities..." autofocus autocomplete="off" />
+                        <button onclick="sendMessage()" id="send-btn" class="send-btn">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Activity Logs Section -->
+            <section class="activity-section">
+                <div class="card-header">
+                    <i class="fa-solid fa-microchip"></i> Agent Execution Thoughts
+                </div>
+                <div id="activity-box" class="activity-box">
+                    <div class="activity-placeholder">
+                        <i class="fa-solid fa-bolt"></i>
+                        <p>Ask a question that triggers a tool (like weather or addition) to see the agent's real-time execution steps here.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Toggle Mobile Sidebar Drawer
+    function toggleSidebar() {
+        document.querySelector('.sidebar').classList.toggle('active');
+        document.getElementById('sidebar-overlay').classList.toggle('active');
+    }
+
+    // Event listener for Enter Key
+    document.getElementById("user-input").addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+    });
+
+    async function sendMessage() {
+        const inputEl = document.getElementById("user-input");
+        const messageText = inputEl.value.trim();
+        if (!messageText) return;
+
+        // Clear input field
+        inputEl.value = "";
+
+        const chatBox = document.getElementById("chat-box");
+        const activityBox = document.getElementById("activity-box");
+
+        // 1. Render User Message
+        chatBox.innerHTML += `
+            <div class="message user slide-in">
+                <div class="bubble">
+                    <p>${escapeHTML(messageText)}</p>
+                </div>
+                <div class="avatar"><i class="fa-solid fa-user"></i></div>
+            </div>
+        `;
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // 2. Render Loading/thinking indicator for Bot
+        const botLoadingId = "bot-loading-" + Date.now();
+        chatBox.innerHTML += `
+            <div class="message bot slide-in" id="${botLoadingId}">
+                <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                <div class="bubble typing-bubble">
+                    <div class="typing-indicator">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            </div>
+        `;
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // 3. Clear Right Thought Panel Placeholder and show active state
+        activityBox.innerHTML = `
+            <div class="log-indicator">
+                <i class="fa-solid fa-spinner fa-spin"></i> Agent analyzing request...
+            </div>
+        `;
+
+        try {
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: messageText })
+            });
+
+            // Remove loading indicator
+            const loadingEl = document.getElementById(botLoadingId);
+            if (loadingEl) loadingEl.remove();
+
+            if (!response.ok) {
+                throw new Error("HTTP connection check failed with status: " + response.status);
+            }
+
+            const data = await response.json();
+
+            // 4. Render Bot Reply
+            chatBox.innerHTML += `
+                <div class="message bot slide-in">
+                    <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="bubble">
+                        <p>${formatMarkdown(data.reply)}</p>
+                    </div>
+                </div>
+            `;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // 5. Render Agent Thought Logs in Right Panel
+            if (data.logs && data.logs.length > 0) {
+                activityBox.innerHTML = "";
+                data.logs.forEach(log => {
+                    const logClass = log.status === 'calling' ? 'log-calling' : 'log-success';
+                    const icon = log.status === 'calling' ? '<i class="fa-solid fa-gear fa-spin"></i>' : '<i class="fa-solid fa-check"></i>';
+                    activityBox.innerHTML += `
+                        <div class="log-item ${logClass}">
+                            <div class="log-title">${icon} ${log.tool.toUpperCase()}</div>
+                            <div class="log-msg">${escapeHTML(log.message)}</div>
+                        </div>
+                    `;
+                });
+            } else {
+                activityBox.innerHTML = `
+                    <div class="log-item log-none">
+                        <div class="log-msg"><i class="fa-solid fa-info-circle"></i> Replying directly. No external tool execution was required for this query.</div>
+                    </div>
+                `;
+            }
+            activityBox.scrollTop = activityBox.scrollHeight;
+
+        } catch (error) {
+            // Remove loading
+            const loadingEl = document.getElementById(botLoadingId);
+            if (loadingEl) loadingEl.remove();
+
+            chatBox.innerHTML += `
+                <div class="message bot error-msg slide-in">
+                    <div class="avatar"><i class="fa-solid fa-circle-exclamation"></i></div>
+                    <div class="bubble">
+                        <p>Sorry, a server exception occurred while attempting to invoke Gemini: ${escapeHTML(error.message)}</p>
+                    </div>
+                </div>
+            `;
+            chatBox.scrollTop = chatBox.scrollHeight;
+            activityBox.innerHTML = `
+                <div class="log-item log-error">
+                    <div class="log-msg"><i class="fa-solid fa-times-circle"></i> Service call failed.</div>
+                </div>
+            `;
+        }
+    }
+
+    // Helper: Escape tags
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag)
+        );
+    }
+
+    // Simple markdown link / bold parser
+    function formatMarkdown(text) {
+        let clean = escapeHTML(text);
+        // Map **text** to <strong>text</strong>
+        clean = clean.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        // Map *text* to <em>text</em>
+        clean = clean.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        // Map `code` to <code>code</code>
+        clean = clean.replace(/`([^`]+)`/g, '<code>$1</code>');
+        // Replace newlines with <br>
+        clean = clean.replace(/\n/g, '<br>');
+        return clean;
+    }
+</script>
+
+</body>
+</html>
