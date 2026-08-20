@@ -5,3 +5,5 @@ __pycache__/
 error_trace.txt
 results_*.txt
 *.webp
+*.log
+
